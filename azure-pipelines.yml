@@ -32,7 +32,7 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
     testAssemblyVer2: '**/test.exe'
-    pathtoCustomTestAdapters: "**/packages"
+    pathtoCustomTestAdapters: "packages"
     codeCoverageEnabled: True
 
 - task: PublishTestResults@2
