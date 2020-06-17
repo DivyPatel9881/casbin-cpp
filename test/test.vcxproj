@@ -167,6 +167,7 @@
     </ClCompile>
     <ClCompile Include="test_config.cpp" />
     <ClCompile Include="test_model.cpp" />
+    <ClCompile Include="test_util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

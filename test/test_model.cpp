@@ -15,7 +15,7 @@ using namespace std;
 
 namespace test_model
 {
-	TEST_CLASS(testHello)
+	TEST_CLASS(TestModel)
 	{
 		public:
 
