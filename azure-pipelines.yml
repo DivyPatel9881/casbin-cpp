@@ -32,3 +32,4 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
     testAssemblyVer2: '**\*test*.obj'
+    codeCoverageEnabled: True
