@@ -33,3 +33,9 @@ steps:
     configuration: '$(buildConfiguration)'
     testAssemblyVer2: '**\*test*.obj'
     codeCoverageEnabled: True
+
+- task: PublishTestResults@2
+  condition: succeededOrFailed()
+  inputs:
+    testRunner: VSTest
+    testResultsFiles: '**/*.trx'
