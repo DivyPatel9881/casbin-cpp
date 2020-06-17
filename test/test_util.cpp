@@ -8,9 +8,9 @@ using namespace std;
 
 namespace test_util
 {
-	TEST_CLASS(TestModel)
-	{
-		public:
+    TEST_CLASS(TestModel)
+    {
+        public:
 
             void TestEscapeAssertion(string s, string res) {
                 string my_res = EscapeAssertion(s);
@@ -57,5 +57,5 @@ namespace test_util
                 TestArrayEquals(vector<string> {"a", "b", "c"}, vector<string> {"a", "c", "b"}, false);
                 TestArrayEquals(vector<string> {"a", "b", "c"}, vector<string> {}, false);
             }
-	};
+    };
 }
