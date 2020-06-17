@@ -22,21 +22,29 @@ steps:
     restoreSolution: '$(solution)'
 
 - task: VSBuild@1
+  displayName: Build
   inputs:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
 - task: VSTest@2
+  displayName: Test
   inputs:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
     testAssemblyVer2: '**/test*.dll'
-    # pathtoCustomTestAdapters: "/packages"
     codeCoverageEnabled: True
 
-- task: PublishTestResults@2
-  condition: succeededOrFailed()
+- task: reportgenerator@4
   inputs:
-    testRunner: VSTest
-    testResultsFiles: '**/*.trx'
+    reports: '**/*.coverage'
+    targetdir: 'TestResults'
+    reporttypes: 'HtmlInline_AzurePipelines;Cobertura:Badges'
+
+- task: PublishCodeCoverageResults@1
+  displayName: 'Publish code coverage results'
+  inputs:
+    codeCoverageTool: Cobertura
+    summaryFileLocation: '$(build.sourcesdirectory)\src\target\reports\coverage\Cobertura.xml'
+    reportDirectory: '$(build.sourcesdirectory)\src\target\reports\coverage'
