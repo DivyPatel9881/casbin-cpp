@@ -1,0 +1,10 @@
+path_classifiers:
+  library:
+    - casbin
+  test: 
+    - test              # tag test folder only as test
+  docs:
+    - README.md
+    - LICENSE.txt
+extraction:
+  cpp:
