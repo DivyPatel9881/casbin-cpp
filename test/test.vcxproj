@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 <?xml version="1.0" encoding="utf-8"?>
+=======
+﻿<?xml version="1.0" encoding="utf-8"?>
+>>>>>>> upstream/master
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -165,8 +169,20 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+<<<<<<< HEAD
     <ClCompile Include="test_config.cpp" />
     <ClCompile Include="test_model.cpp" />
+=======
+    <ClCompile Include="test_built_in_functions.cpp" />
+    <ClCompile Include="test_config.cpp" />
+    <ClCompile Include="test_enforcer.cpp" />
+    <ClCompile Include="test_management_api.cpp" />
+    <ClCompile Include="test_model.cpp" />
+    <ClCompile Include="test_model_enforcer.cpp" />
+    <ClCompile Include="test_rbac_api.cpp" />
+    <ClCompile Include="test_rbac_api_with_domains.cpp" />
+    <ClCompile Include="test_role_manager.cpp" />
+>>>>>>> upstream/master
     <ClCompile Include="test_util.cpp" />
   </ItemGroup>
   <ItemGroup>

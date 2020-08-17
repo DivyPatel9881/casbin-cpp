@@ -2,9 +2,6 @@
 
 #include "pch.h"
 
-#include <direct.h>
-#include <algorithm>
-
 #include <config.h>
 #include <util.h>
 
@@ -19,6 +16,7 @@ namespace test_config
             Config* config;
 
             TEST_METHOD_INITIALIZE(InitializeConfig) {
+<<<<<<< HEAD
                 string filepath = filePath("../casbin/config/testdata/testini.ini");
                 config = Config::NewConfig(filepath);
             }
@@ -44,6 +42,12 @@ namespace test_config
                 return filepath1;
             }
 
+=======
+                string filepath = "../../casbin/config/testdata/testini.ini";
+                config = Config::NewConfig(filepath);
+            }
+
+>>>>>>> upstream/master
             TEST_METHOD(TestDebug) {
                 Assert::IsTrue(config->GetBool("debug"));
             }

@@ -1,3 +1,19 @@
+/*
+* Copyright 2020 The casbin Authors. All Rights Reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*    http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
 #pragma once
 
 #include "pch.h"
@@ -24,11 +40,12 @@ vector<string> Model :: required_sections{"r","p","e","m"};
 void Model :: LoadModelFromConfig(ConfigInterface *cfg) {
     for(unordered_map <string, string> :: iterator it = section_name_map.begin() ; it != section_name_map.end() ; it++)
         LoadSection(this, cfg, it->first);
+
     vector<string> ms;
-    for(vector<string> :: iterator it = required_sections.begin() ; it != required_sections.end() ; it++){
-        if(!this->HasSection(*it))
-            ms.push_back(section_name_map[*it]);
-    }
+    for(int i=0 ; i < required_sections.size() ; i++)
+        if(!this->HasSection(required_sections[i])) 
+            ms.push_back(section_name_map[required_sections[i]]);
+
     if(ms.size() > 0)
         throw MissingRequiredSections("missing required sections: " + Join(ms, ","));
 }
@@ -40,8 +57,9 @@ bool Model :: HasSection(string sec) {
 void Model :: LoadSection(Model* model, ConfigInterface* cfg, string sec) {
     int i = 1;
     while(true) {
-        if (!LoadAssertion(model, cfg, sec, sec+GetKeySuffix(i)))
+        if (!LoadAssertion(model, cfg, sec, sec+GetKeySuffix(i))){
             break;
+        }
         else
             i++;
     }
@@ -66,20 +84,23 @@ bool Model :: LoadAssertion(Model* model, ConfigInterface* cfg, string sec, stri
 bool Model :: AddDef(string sec, string key, string value) {
     if(value == "")
         return false;
-    Assertion ast;
-    ast.key = key;
-    ast.value = value;
+
+    Assertion* ast = new Assertion;
+    ast->key = key;
+    ast->value = value;
     if (sec == "r" || sec == "p") {
-        ast.tokens = Split(ast.value, ",");
-        for (int i = 0; i < ast.tokens.size() ; i++)
-            ast.tokens[i] = key + "_" + Trim(ast.tokens[i]);
+        ast->tokens = Split(ast->value, ",");
+        for (int i = 0; i < ast->tokens.size() ; i++)
+            ast->tokens[i] = key + "_" + Trim(ast->tokens[i]);
     }
     else
-        ast.value = RemoveComments(EscapeAssertion(ast.value));
+        ast->value = RemoveComments(ast->value);
 
-    if (m.find(sec) != m.end())
+    if (m.find(sec) == m.end())
         m[sec] = AssertionMap();
-    m[sec].assertion_map[key] = &ast;
+    ast->policy = vector<vector<string>>{};
+
+    m[sec].assertion_map[key] = ast;
 
     return true;
 }
@@ -141,9 +162,8 @@ void Model :: BuildIncrementalRoleLinks(RoleManager* rm, policy_op op, string se
 
 // BuildRoleLinks initializes the roles in RBAC.
 void Model :: BuildRoleLinks(RoleManager* rm) {
-    for (unordered_map<string, Assertion*> :: iterator it = this->m["g"].assertion_map.begin() ; it != this->m["g"].assertion_map.end() ; it++) {
+    for (unordered_map<string, Assertion*> :: iterator it = this->m["g"].assertion_map.begin() ; it != this->m["g"].assertion_map.end() ; it++)
         (it->second)->BuildRoleLinks(rm);
-    }
 }
 
 // PrintPolicy prints the policy to log.
@@ -167,12 +187,14 @@ void Model :: PrintPolicy() {
 
 // ClearPolicy clears all current policy.
 void Model :: ClearPolicy() {
-    for (unordered_map<string, Assertion*> :: iterator it = this->m["p"].assertion_map.begin() ; it != this->m["p"].assertion_map.end() ; it++) {
-        (it->second)->policy.clear();
+    for (unordered_map<string, Assertion*> :: iterator it = this->m["p"].assertion_map.begin() ; it != this->m["p"].assertion_map.end() ; it++){
+        if((it->second)->policy.size() > 0)
+            (it->second)->policy.clear();
     }
 
-    for (unordered_map<string, Assertion*> :: iterator it = this->m["g"].assertion_map.begin() ; it != this->m["g"].assertion_map.end() ; it++) {
-        (it->second)->policy.clear();
+    for (unordered_map<string, Assertion*> :: iterator it = this->m["g"].assertion_map.begin() ; it != this->m["g"].assertion_map.end() ; it++){
+        if((it->second)->policy.size() > 0)
+            (it->second)->policy.clear();
     }
 }
 
@@ -184,18 +206,17 @@ vector<vector<string>> Model :: GetPolicy(string sec, string p_type) {
 // GetFilteredPolicy gets rules based on field filters from a policy.
 vector<vector<string>> Model :: GetFilteredPolicy(string sec, string p_type, int field_index, vector<string> field_values) {
     vector<vector<string>> res;
-
-    for (vector<vector<string>> :: iterator it = m[sec].assertion_map[p_type]->policy.begin() ; it != m[sec].assertion_map[p_type]->policy.end() ; it++){
+    vector<vector<string>> policy(m[sec].assertion_map[p_type]->policy);
+    for(int i = 0 ; i < policy.size() ; i++){
         bool matched = true;
-        for(int i = 0 ; i < field_values.size() ; i++){
-            if(field_values[i] != "" && (*it)[field_index + i] != field_values[i] ){
+        for(int j = 0 ; j < field_values.size() ; j++){
+            if(field_values[j] != "" && (policy[i])[field_index + j] != field_values[j] ){
                 matched = false;
                 break;
             }
         }
-        if(matched) {
-            res.push_back(*it);
-        }
+        if(matched)
+            res.push_back(policy[i]);
     }
 
     return res;
@@ -203,11 +224,10 @@ vector<vector<string>> Model :: GetFilteredPolicy(string sec, string p_type, int
 
 // HasPolicy determines whether a model has the specified policy rule.
 bool Model :: HasPolicy(string sec, string p_type, vector<string> rule) {
-    for (vector<vector<string>> :: iterator it = m[sec].assertion_map[p_type]->policy.begin() ; it != m[sec].assertion_map[p_type]->policy.end() ; it++) {
-        if (ArrayEquals(rule, *it)) {
+    vector<vector<string>> policy = m[sec].assertion_map[p_type]->policy;
+    for(int i=0 ; i < policy.size() ; i++)
+        if (ArrayEquals(rule, policy[i]))
             return true;
-        }
-    }
 
     return false;
 }
@@ -218,6 +238,7 @@ bool Model :: AddPolicy(string sec, string p_type, vector<string> rule) {
         m[sec].assertion_map[p_type]->policy.push_back(rule);
         return true;
     }
+
     return false;
 }
 
@@ -248,17 +269,19 @@ bool Model :: RemovePolicy(string sec, string p_type, vector<string> rule) {
 // RemovePolicies removes policy rules from the model.
 bool Model :: RemovePolicies(string sec, string p_type, vector<vector<string>> rules) {
     OUTER: for (int j = 0; j < rules.size(); j++) {
-        for (int i = 0; i < this->m[sec].assertion_map[p_type]->policy.size(); i++)
-            if (ArrayEquals(rules[j], this->m[sec].assertion_map[p_type]->policy[i])) {
+        for (int i = 0; i < this->m[sec].assertion_map[p_type]->policy.size(); i++){
+            if (ArrayEquals(rules[j], this->m[sec].assertion_map[p_type]->policy[i]))
                 goto OUTER;
         }
         return false;
     }
 
-    for (int j = 0; j < rules.size(); j++)
-        for (int i = 0; i < this->m[sec].assertion_map[p_type]->policy.size(); i++)
+    for (int j = 0; j < rules.size(); j++){
+        for (int i = 0; i < this->m[sec].assertion_map[p_type]->policy.size(); i++){
             if (ArrayEquals(rules[j], this->m[sec].assertion_map[p_type]->policy[i]))
                 this->m[sec].assertion_map[p_type]->policy.erase(this->m[sec].assertion_map[p_type]->policy.begin() + i);
+        }
+    }
 
     return true;
 }
@@ -267,21 +290,22 @@ bool Model :: RemovePolicies(string sec, string p_type, vector<vector<string>> r
 pair<bool, vector<vector<string>>> Model :: RemoveFilteredPolicy(string sec, string p_type, int field_index, vector<string> field_values) {
     vector<vector<string>> tmp;
     vector<vector<string>> effects;
+    vector<vector<string>> policy(m[sec].assertion_map[p_type]->policy);
     bool res = false;
-    for (vector<vector< string>> :: iterator it = m[sec].assertion_map[p_type]->policy.begin() ; it != m[sec].assertion_map[p_type]->policy.end() ; it++) {
+    for(int i = 0 ; i < policy.size() ; i++){
         bool matched = true;
-        for (int i = 0 ; i < field_values.size() ; i++) {
-            if (field_values[i] != "" && (*it)[field_index+i] != field_values[i]) {
+        for (int j = 0 ; j < field_values.size() ; j++) {
+            if (field_values[j] != "" && (policy[i])[field_index+j] != field_values[j]) {
                 matched = false;
                 break;
             }
         }
         if (matched){
-            effects.push_back(*it);
+            effects.push_back(policy[i]);
             res = true;
         }
         else
-            tmp.push_back(*it);
+            tmp.push_back(policy[i]);
     }
 
     m[sec].assertion_map[p_type]->policy = tmp;
@@ -292,10 +316,9 @@ pair<bool, vector<vector<string>>> Model :: RemoveFilteredPolicy(string sec, str
 // GetValuesForFieldInPolicy gets all values for a field for all rules in a policy, duplicated values are removed.
 vector<string> Model :: GetValuesForFieldInPolicy(string sec, string p_type, int field_index) {
     vector<string> values;
-
-    for (vector<vector<string>> :: iterator it = m[sec].assertion_map[p_type]->policy.begin() ; it != m[sec].assertion_map[p_type]->policy.end() ; it++){
-        values.push_back((*it)[field_index]);
-    }
+    vector<vector<string>> policy(m[sec].assertion_map[p_type]->policy);
+    for(int i = 0 ; i < policy.size() ; i++)
+        values.push_back((policy[i])[field_index]);
 
     ArrayRemoveDuplicates(values);
 
@@ -307,9 +330,9 @@ vector<string> Model :: GetValuesForFieldInPolicyAllTypes(string sec, int field_
     vector<string> values;
 
     for (unordered_map<string, Assertion*> :: iterator it = m[sec].assertion_map.begin() ; it != m[sec].assertion_map.end() ; it++) {
-        for (vector<string> :: iterator it1 = this->GetValuesForFieldInPolicy(sec, it->first, field_index).begin() ; it1 != this->GetValuesForFieldInPolicy(sec, it->first, field_index).end() ; it1++) {
-            values.push_back(*it1);
-        }
+        vector<string> values_for_field(this->GetValuesForFieldInPolicy(sec, it->first, field_index));
+        for(int i = 0 ; i < values_for_field.size() ; i++)
+            values.push_back(values_for_field[i]);
     }
 
     ArrayRemoveDuplicates(values);

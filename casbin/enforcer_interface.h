@@ -1,3 +1,19 @@
+/*
+* Copyright 2020 The casbin Authors. All Rights Reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*    http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
 #ifndef CASBIN_CPP_ENFORCER_INTERFACE
 #define CASBIN_CPP_ENFORCER_INTERFACE
 
@@ -13,18 +29,18 @@ class IEnforcer {
 
         /* Enforcer API */
         virtual void InitWithFile(string modelPath, string policyPath) = 0;
-        virtual void InitWithAdapter(string modelPath, Adapter* adapter) = 0;
-        virtual void InitWithModelAndAdapter(Model* m, Adapter* adapter) = 0;
+        virtual void InitWithAdapter(string modelPath, shared_ptr<Adapter> adapter) = 0;
+        virtual void InitWithModelAndAdapter(shared_ptr<Model> m, shared_ptr<Adapter> adapter) = 0;
         virtual void Initialize() = 0;
         virtual void LoadModel() = 0;
-        virtual Model* GetModel() = 0;
-        virtual void SetModel(Model* m) = 0;
-        virtual Adapter* GetAdapter() = 0;
-        virtual void SetAdapter(Adapter* adapter) = 0;
-        virtual void SetWatcher(Watcher* watcher) = 0;
-        virtual RoleManager* GetRoleManager() = 0;
-        virtual void SetRoleManager(RoleManager* rm) = 0;
-        virtual void SetEffector(Effector* eft) = 0;
+        virtual shared_ptr<Model> GetModel() = 0;
+        virtual void SetModel(shared_ptr<Model> m) = 0;
+        virtual shared_ptr<Adapter> GetAdapter() = 0;
+        virtual void SetAdapter(shared_ptr<Adapter> adapter) = 0;
+        virtual void SetWatcher(shared_ptr<Watcher> watcher) = 0;
+        virtual shared_ptr<RoleManager> GetRoleManager() = 0;
+        virtual void SetRoleManager(shared_ptr<RoleManager> rm) = 0;
+        virtual void SetEffector(shared_ptr<Effector> eft) = 0;
         virtual void ClearPolicy() = 0;
         virtual void LoadPolicy() = 0;
 
@@ -44,17 +60,18 @@ class IEnforcer {
         virtual bool EnforceWithMatcher(string matcher, Scope scope) = 0;
 
         /* RBAC API */
-        virtual vector<string> GetRolesForUser(string name) = 0;
-        virtual vector<string> GetUsersForRole(string name) = 0;
+        virtual vector<string> GetRolesForUser(string name, vector<string> domain = {}) = 0;
+        virtual vector<string> GetUsersForRole(string name, vector<string> domain = {}) = 0;
         virtual bool HasRoleForUser(string name, string role) = 0;
         virtual bool AddRoleForUser(string user, string role) = 0;
+        virtual bool AddRolesForUser(string user, vector<string> roles) = 0;
         virtual bool AddPermissionForUser(string user, vector<string> permission) = 0;
         virtual bool DeletePermissionForUser(string user, vector<string> permission) = 0;
         virtual bool DeletePermissionsForUser(string user) = 0;
         virtual vector<vector<string>> GetPermissionsForUser(string user) = 0;
         virtual bool HasPermissionForUser(string user, vector<string> permission) = 0;
-        virtual vector<string> GetImplicitRolesForUser(string name, vector<string> domain) = 0;
-        virtual vector<vector<string>> GetImplicitPermissionsForUser(string user, vector<string> domain) = 0;
+        virtual vector<string> GetImplicitRolesForUser(string name, vector<string> domain = {}) = 0;
+        virtual vector<vector<string>> GetImplicitPermissionsForUser(string user, vector<string> domain = {}) = 0;
         virtual vector<string> GetImplicitUsersForPermission(vector<string> permission) = 0;
         virtual bool DeleteRoleForUser(string user, string role) = 0;
         virtual bool DeleteRolesForUser(string user) = 0;
@@ -103,7 +120,7 @@ class IEnforcer {
         virtual bool RemoveNamedGroupingPolicy(string ptype, vector<string> params) = 0;
         virtual bool RemoveNamedGroupingPolicies(string p_type, vector<vector<string>> rules) = 0;
         virtual bool RemoveFilteredNamedGroupingPolicy(string ptype, int fieldIndex, vector<string> fieldValues) = 0;
-        virtual void AddFunction(string name, Function) = 0;
+        virtual void AddFunction(string name, Function function, Index nargs) = 0;
 
         /* Internal API member functions */
         virtual bool addPolicy(string sec, string ptype, vector<string> rule) = 0;

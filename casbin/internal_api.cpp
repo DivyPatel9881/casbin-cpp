@@ -1,3 +1,19 @@
+/*
+* Copyright 2020 The casbin Authors. All Rights Reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*    http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
 #pragma once
 
 #include "pch.h"
@@ -6,6 +22,7 @@
 #include "./persist/batch_adapter.h"
 #include "./util/util.h"
 #include "./persist/watcher_ex.h"
+#include "./exception/unsupported_operation_exception.h"
 
 // addPolicy adds a rule to the current policy.
 bool Enforcer :: addPolicy(string sec, string p_type, vector<string> rule) {
@@ -18,12 +35,17 @@ bool Enforcer :: addPolicy(string sec, string p_type, vector<string> rule) {
         this->BuildIncrementalRoleLinks(policy_add, p_type, rules);
     }
 
-    if (this->adapter != NULL && this->auto_save)
-        this->adapter->AddPolicy(sec, p_type, rule);
+    if (this->adapter && this->auto_save) {
+        try {
+            this->adapter->AddPolicy(sec, p_type, rule);
+        }
+        catch(UnsupportedOperationException e) {
+        }
+    }
 
-    if (this->watcher != NULL && this->auto_notify_watcher) {
-        if (IsInstanceOf<WatcherEx>(this->watcher)) {
-            void* watcher = this->watcher;
+    if (this->watcher && this->auto_notify_watcher) {
+        if (IsInstanceOf<WatcherEx>(this->watcher.get())) {
+            void* watcher = this->watcher.get();
             ((WatcherEx*)watcher)->UpdateForAddPolicy(rule);
         }
         else
@@ -42,12 +64,16 @@ bool Enforcer :: addPolicies(string sec, string p_type, vector<vector<string>> r
     if (sec == "g")
         this->BuildIncrementalRoleLinks(policy_add, p_type, rules);
 
-    if (this->adapter != NULL && this->auto_save) {
-        void* adapter = this->adapter;
-        ((BatchAdapter *)adapter)->AddPolicies(sec, p_type, rules);
+
+    if (this->adapter && this->auto_save) {
+        try {
+            dynamic_cast<BatchAdapter*>(this->adapter.get())->AddPolicies(sec, p_type, rules);
+        }
+        catch(UnsupportedOperationException e) {
+        }
     }
 
-    if (this->watcher != NULL && this->auto_notify_watcher)
+    if (this->watcher && this->auto_notify_watcher)
         this->watcher->Update();
 
     return rules_added;
@@ -63,13 +89,18 @@ bool Enforcer :: removePolicy(string sec, string p_type, vector<string> rule) {
         vector<vector<string>> rules{rule};
         this->BuildIncrementalRoleLinks(policy_add, p_type, rules);
     }
+    
+    if (this->adapter && this->auto_save) {
+        try {
+            this->adapter->RemovePolicy(sec, p_type, rule);
+        }
+        catch (UnsupportedOperationException e) {
+        }
+    }
 
-    if(this->adapter != NULL && this->auto_save)
-        this->adapter->RemovePolicy(sec, p_type, rule);
-
-    if(this->watcher !=NULL && this->auto_notify_watcher){
-        if (IsInstanceOf<WatcherEx>(this->watcher)) {
-            void* watcher = this->watcher;
+    if(this->watcher && this->auto_notify_watcher){
+        if (IsInstanceOf<WatcherEx>(this->watcher.get())) {
+            void* watcher = this->watcher.get();
             ((WatcherEx*)watcher)->UpdateForRemovePolicy(rule);
         }
         else
@@ -88,12 +119,15 @@ bool Enforcer :: removePolicies(string sec, string p_type, vector<vector<string>
     if (sec == "g")
         this->BuildIncrementalRoleLinks(policy_add, p_type, rules);
 
-    if (this->adapter != NULL && this->auto_save) {
-        void* adapter = this->adapter;
-        ((BatchAdapter *)adapter)->RemovePolicies(sec, p_type, rules);
+    if (this->adapter && this->auto_save) {
+        try{
+            dynamic_cast<BatchAdapter*>(this->adapter.get())->RemovePolicies(sec, p_type, rules);
+        }
+        catch(UnsupportedOperationException e){
+        }
     }
 
-    if (this->watcher != NULL && this->auto_notify_watcher)
+    if (this->watcher && this->auto_notify_watcher)
         this->watcher->Update();
 
     return rules_removed;
@@ -111,12 +145,17 @@ bool Enforcer :: removeFilteredPolicy(string sec, string p_type, int field_index
     if (sec == "g")
         this->BuildIncrementalRoleLinks(policy_remove, p_type, effects);
 
-    if(this->adapter != NULL && this->auto_save)
-        this->adapter->RemoveFilteredPolicy(sec, p_type, field_index, field_values);
+    if (this->adapter && this->auto_save) {
+        try {
+            this->adapter->RemoveFilteredPolicy(sec, p_type, field_index, field_values); \
+        }
+        catch (UnsupportedOperationException e) {
+        }
+    }
 
-    if (this->watcher !=NULL && this->auto_notify_watcher) {
-        if (IsInstanceOf<WatcherEx>(this->watcher)) {
-            void* watcher = this->watcher;
+    if (this->watcher && this->auto_notify_watcher) {
+        if (IsInstanceOf<WatcherEx>(this->watcher.get())) {
+            void* watcher = this->watcher.get();
             ((WatcherEx*)watcher)->UpdateForRemoveFilteredPolicy(field_index, field_values);
         }
         else

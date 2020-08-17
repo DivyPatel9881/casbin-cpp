@@ -87,9 +87,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dllmain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -216,16 +213,10 @@
     <ClCompile Include="rbac\default_role_manager.cpp">
       <Filter>Source Files\rbac</Filter>
     </ClCompile>
-    <ClCompile Include="rbac\group_role_manager.cpp">
-      <Filter>Source Files\rbac</Filter>
-    </ClCompile>
     <ClCompile Include="persist\file_adapter\batch_file_adapter.cpp">
       <Filter>Source Files\persist\file_adapter</Filter>
     </ClCompile>
     <ClCompile Include="persist\file_adapter\file_adapter.cpp">
-      <Filter>Source Files\persist\file_adapter</Filter>
-    </ClCompile>
-    <ClCompile Include="persist\file_adapter\filtered_adapter.cpp">
       <Filter>Source Files\persist\file_adapter</Filter>
     </ClCompile>
     <ClCompile Include="persist\adapter.cpp">
@@ -258,6 +249,9 @@
     <ClCompile Include="ip_parser\parser\parseIPv4.cpp">
       <Filter>Source Files\ip_parser\parser</Filter>
     </ClCompile>
+    <ClCompile Include="persist\file_adapter\filtered_file_adapter.cpp">
+      <Filter>Source Files\persist\file_adapter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config\config_interface.h">
@@ -275,9 +269,6 @@
     <ClInclude Include="persist\adapter.h">
       <Filter>Header Files\persist</Filter>
     </ClInclude>
-    <ClInclude Include="persist\adapter_filtered.h">
-      <Filter>Header Files\persist</Filter>
-    </ClInclude>
     <ClInclude Include="persist\watcher.h">
       <Filter>Header Files\persist</Filter>
     </ClInclude>
@@ -285,9 +276,6 @@
       <Filter>Header Files\persist\file_adapter</Filter>
     </ClInclude>
     <ClInclude Include="rbac\default_role_manager.h">
-      <Filter>Header Files\rbac</Filter>
-    </ClInclude>
-    <ClInclude Include="rbac\group_role_manager.h">
       <Filter>Header Files\rbac</Filter>
     </ClInclude>
     <ClInclude Include="rbac\role_manager.h">
@@ -422,9 +410,6 @@
     <ClInclude Include="duktape\pch.h">
       <Filter>Header Files\duktape</Filter>
     </ClInclude>
-    <ClInclude Include="persist\file-adapter\filtered_adapter.h">
-      <Filter>Header Files\persist\file_adapter</Filter>
-    </ClInclude>
     <ClInclude Include="effect\default_effector.h">
       <Filter>Header Files\effect</Filter>
     </ClInclude>
@@ -472,6 +457,12 @@
     </ClInclude>
     <ClInclude Include="model\scope_config.h">
       <Filter>Header Files\model</Filter>
+    </ClInclude>
+    <ClInclude Include="persist\filtered_adapter.h">
+      <Filter>Header Files\persist</Filter>
+    </ClInclude>
+    <ClInclude Include="persist\file_adapter\filtered_file_adapter.h">
+      <Filter>Header Files\persist\file_adapter</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

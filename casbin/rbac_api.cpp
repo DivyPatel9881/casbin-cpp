@@ -1,3 +1,19 @@
+/*
+* Copyright 2020 The casbin Authors. All Rights Reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*    http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
 #pragma once
 
 #include "pch.h"
@@ -7,22 +23,21 @@
 #include "./util/util.h"
 
 // GetRolesForUser gets the roles that a user has.
-vector<string> Enforcer :: GetRolesForUser(string name) {
-    vector<string> domain;
+vector<string> Enforcer :: GetRolesForUser(string name, vector<string> domain) {
     vector<string> res = this->model->m["g"].assertion_map["g"]->rm->GetRoles(name, domain);
     return res;
 }
 
 // GetUsersForRole gets the users that has a role.
-vector<string> Enforcer :: GetUsersForRole(string name) {
-    vector<string> domain;
+vector<string> Enforcer :: GetUsersForRole(string name, vector<string> domain) {
     vector<string> res = this->model->m["g"].assertion_map["g"]->rm->GetUsers(name, domain);
     return res;
 }
 
 // HasRoleForUser determines whether a user has a role.
 bool Enforcer :: HasRoleForUser(string name, string role) {
-    vector<string> roles = this->GetRolesForUser(name);
+    vector<string> domain;
+    vector<string> roles = this->GetRolesForUser(name, domain);
 
     bool has_role = false;
     for (int i = 0 ; i < roles.size() ; i++) {
@@ -40,6 +55,18 @@ bool Enforcer :: HasRoleForUser(string name, string role) {
 bool Enforcer :: AddRoleForUser(string user, string role) {
     vector<string> params{user, role};
     return this->AddGroupingPolicy(params);
+}
+
+// AddRolesForUser adds roles for a user.
+// Returns false if the user already has the roles (aka not affected).
+bool Enforcer :: AddRolesForUser(string user, vector<string> roles) {
+    bool f = false;
+    for(int i=0;i<roles.size();i++) {
+        bool b = this->AddGroupingPolicy({user, roles[i]});
+        if(b)
+            f = true;
+    }
+    return f;
 }
 
 // DeleteRoleForUser deletes a role for a user.
@@ -195,24 +222,23 @@ vector<vector<string>> Enforcer :: GetImplicitPermissionsForUser(string user, ve
 // GetImplicitUsersForPermission("data1", "read") will get: ["alice", "bob"].
 // Note: only users will be returned, roles (2nd arg in "g") will be excluded.
 vector<string> Enforcer :: GetImplicitUsersForPermission(vector<string> permission) {
-    vector<string> subjects = this->GetAllSubjects();
-    vector<string> roles = this->GetAllRoles();
+    vector<string> p_subjects = this->GetAllSubjects();
+    vector<string> g_inherit = this->model->GetValuesForFieldInPolicyAllTypes("g", 1);
+    vector<string> g_subjects = this->model->GetValuesForFieldInPolicyAllTypes("g", 0);
 
-    vector<string> users = SetSubtract(subjects, roles);
+    vector<string> subjects(p_subjects);
+    subjects.insert(subjects.end(), g_subjects.begin(), g_subjects.end());
+    ArrayRemoveDuplicates(subjects);
 
     vector<string> res;
-    for (int i = 0 ; i < users.size() ; i++) {
-        Scope scope = (Scope)InitializeScope();
-        PushObject(scope);
-        PushStringPropToObject(scope, "r", users[i], "sub");
-        PushStringPropToObject(scope, "r", permission[0], "obj");
-        PushStringPropToObject(scope, "r", permission[1], "act");
-        
-        bool allowed = this->Enforce(scope);
+    for(int i=0;i<subjects.size();i++) {
+        bool allowed = this->Enforce({subjects[i], permission[0], permission[1]});
 
-        if (allowed)
-            res.push_back(users[i]);
+        if(allowed) {
+            res.push_back(subjects[i]);
+        }
     }
 
+    res = SetSubtract(res, g_inherit);
     return res;
 }

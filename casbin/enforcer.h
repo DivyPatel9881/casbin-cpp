@@ -13,26 +13,27 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
 #ifndef CASBIN_CPP_ENFORCER
 #define CASBIN_CPP_ENFORCER
 
+#include<memory>
 #include "./rbac/role_manager.h"
 #include "./model/function.h"
 #include "./enforcer_interface.h"
-#include "./persist/adapter_filtered.h"
+#include "./persist/filtered_adapter.h"
 
 // Enforcer is the main interface for authorization enforcement and policy management.
 class Enforcer : public IEnforcer{
     private:
 
         string model_path;
-        Model* model;
+        shared_ptr<Model> model;
         FunctionMap func_map;
-        Effector* eft;
+        shared_ptr<Effector> eft;
 
-        Adapter* adapter;
-        Watcher* watcher;
-        RoleManager* rm;
+        shared_ptr<Adapter> adapter;
+        shared_ptr<Watcher> watcher;
 
         bool enabled;
         bool auto_save;
@@ -44,43 +45,45 @@ class Enforcer : public IEnforcer{
 
     public:
 
+        shared_ptr<RoleManager> rm;
+
         /**
          * Enforcer is the default constructor.
          */
-        static Enforcer* NewEnforcer();
+        static unique_ptr<Enforcer> NewEnforcer();
         /**
          * Enforcer initializes an enforcer with a model file and a policy file.
          *
          * @param model_path the path of the model file.
          * @param policyFile the path of the policy file.
          */
-        static Enforcer* NewEnforcer(string model_path, string policyFile);
+        static unique_ptr<Enforcer> NewEnforcer(string model_path, string policyFile);
         /**
          * Enforcer initializes an enforcer with a database adapter.
          *
          * @param model_path the path of the model file.
          * @param adapter the adapter.
          */
-        static Enforcer* NewEnforcer(string model_path, Adapter* adapter);
+        static unique_ptr<Enforcer> NewEnforcer(string model_path, shared_ptr<Adapter> adapter);
         /**
          * Enforcer initializes an enforcer with a model and a database adapter.
          *
          * @param m the model.
          * @param adapter the adapter.
          */
-        static Enforcer* NewEnforcer(Model* m, Adapter* adapter);
+        static unique_ptr<Enforcer> NewEnforcer(shared_ptr<Model> m, shared_ptr<Adapter> adapter);
         /**
          * Enforcer initializes an enforcer with a model.
          *
          * @param m the model.
          */
-        static Enforcer* NewEnforcer(Model* m);
+        static unique_ptr<Enforcer> NewEnforcer(shared_ptr<Model> m);
         /**
          * Enforcer initializes an enforcer with a model file.
          *
          * @param model_path the path of the model file.
          */
-        static Enforcer* NewEnforcer(string model_path);
+        static unique_ptr<Enforcer> NewEnforcer(string model_path);
         /**
          * Enforcer initializes an enforcer with a model file, a policy file and an enable log flag.
          *
@@ -88,33 +91,33 @@ class Enforcer : public IEnforcer{
          * @param policyFile the path of the policy file.
          * @param enableLog whether to enable Casbin's log.
          */
-        static Enforcer* NewEnforcer(string model_path, string policyFile, bool enableLog);
+        static unique_ptr<Enforcer> NewEnforcer(string model_path, string policyFile, bool enableLog);
         // InitWithFile initializes an enforcer with a model file and a policy file.
         void InitWithFile(string model_path, string policyPath);
         // InitWithAdapter initializes an enforcer with a database adapter.
-        void InitWithAdapter(string model_path, Adapter* adapter);
+        void InitWithAdapter(string model_path, shared_ptr<Adapter> adapter);
         // InitWithModelAndAdapter initializes an enforcer with a model and a database adapter.
-        void InitWithModelAndAdapter(Model* m, Adapter* adapter);
+        void InitWithModelAndAdapter(shared_ptr<Model> m, shared_ptr<Adapter> adapter);
         void Initialize();
         // LoadModel reloads the model from the model CONF file.
         // Because the policy is attached to a model, so the policy is invalidated and needs to be reloaded by calling LoadPolicy().
         void LoadModel();
         // GetModel gets the current model.
-        Model* GetModel();
+        shared_ptr<Model> GetModel();
         // SetModel sets the current model.
-        void SetModel(Model* m);
+        void SetModel(shared_ptr<Model> m);
         // GetAdapter gets the current adapter.
-        Adapter* GetAdapter();
+        shared_ptr<Adapter> GetAdapter();
         // SetAdapter sets the current adapter.
-        void SetAdapter(Adapter* adapter);
+        void SetAdapter(shared_ptr<Adapter> adapter);
         // SetWatcher sets the current watcher.
-        void SetWatcher(Watcher* watcher);
+        void SetWatcher(shared_ptr<Watcher> watcher);
         // GetRoleManager gets the current role manager.
-        RoleManager* GetRoleManager();
+        shared_ptr<RoleManager> GetRoleManager();
         // SetRoleManager sets the current role manager.
-        void SetRoleManager(RoleManager* rm);
+        void SetRoleManager(shared_ptr <RoleManager> rm);
         // SetEffector sets the current effector.
-        void SetEffector(Effector* eft);
+        void SetEffector(shared_ptr<Effector> eft);
         // ClearPolicy clears all policy.
         void ClearPolicy();
         // LoadPolicy reloads the policy from file/database.
@@ -145,9 +148,17 @@ class Enforcer : public IEnforcer{
         void BuildIncrementalRoleLinks(policy_op op, string p_type, vector<vector<string>> rules);
         // Enforce decides whether a "subject" can access a "object" with the operation "action", input parameters are usually: (sub, obj, act).
         bool Enforce(Scope scope);
+        // Enforce with a vector param,decides whether a "subject" can access a "object" with the operation "action", input parameters are usually: (sub, obj, act).
+        bool Enforce(vector<string> params);        
+        // Enforce with a map param,decides whether a "subject" can access a "object" with the operation "action", input parameters are usually: (sub, obj, act).
+        bool Enforce(unordered_map<string,string> params);
         // EnforceWithMatcher use a custom matcher to decides whether a "subject" can access a "object" with the operation "action", input parameters are usually: (matcher, sub, obj, act), use model matcher by default when matcher is "".
         bool EnforceWithMatcher(string matcher, Scope scope);
-
+        // EnforceWithMatcher use a custom matcher to decides whether a "subject" can access a "object" with the operation "action", input parameters are usually: (matcher, sub, obj, act), use model matcher by default when matcher is "".
+        bool EnforceWithMatcher(string matcher, vector<string> params);
+        // EnforceWithMatcher use a custom matcher to decides whether a "subject" can access a "object" with the operation "action", input parameters are usually: (matcher, sub, obj, act), use model matcher by default when matcher is "".
+        bool EnforceWithMatcher(string matcher, unordered_map<string, string> params);
+       
         /*Management API member functions.*/
         vector<string> GetAllSubjects();
         vector<string> GetAllNamedSubjects(string ptype);
@@ -189,20 +200,21 @@ class Enforcer : public IEnforcer{
         bool RemoveNamedGroupingPolicy(string ptype, vector<string> params);
         bool RemoveNamedGroupingPolicies(string p_type, vector<vector<string>> rules);
         bool RemoveFilteredNamedGroupingPolicy(string ptype, int field_index, vector<string> field_values);
-        void AddFunction(string name, Function);
+        void AddFunction(string name, Function function, Index nargs);
 
         /*RBAC API member functions.*/
-        vector<string> GetRolesForUser(string name);
-        vector<string> GetUsersForRole(string name);
+        vector<string> GetRolesForUser(string name, vector<string> domain = {});
+        vector<string> GetUsersForRole(string name, vector<string> domain = {});
         bool HasRoleForUser(string name, string role);
         bool AddRoleForUser(string user, string role);
+        bool AddRolesForUser(string user, vector<string> roles);
         bool AddPermissionForUser(string user, vector<string> permission);
         bool DeletePermissionForUser(string user, vector<string> permission);
         bool DeletePermissionsForUser(string user);
         vector<vector<string>> GetPermissionsForUser(string user);
         bool HasPermissionForUser(string user, vector<string> permission);
-        vector<string> GetImplicitRolesForUser(string name, vector<string> domain);
-        vector<vector<string>> GetImplicitPermissionsForUser(string user, vector<string> domain);
+        vector<string> GetImplicitRolesForUser(string name, vector<string> domain = {});
+        vector<vector<string>> GetImplicitPermissionsForUser(string user, vector<string> domain = {});
         vector<string> GetImplicitUsersForPermission(vector<string> permission);
         bool DeleteRoleForUser(string user, string role);
         bool DeleteRolesForUser(string user);
@@ -218,11 +230,11 @@ class Enforcer : public IEnforcer{
         bool removeFilteredPolicy(string sec , string ptype , int fieldIndex , vector<string> fieldValues);
 
         /* RBAC API with domains.*/
-        vector<string> GetUsersForRoleInDomain(string name, string domain);
-        vector<string> GetRolesForUserInDomain(string name, string domain);
-        vector<vector<string>> GetPermissionsForUserInDomain(string user, string domain);
-        bool AddRoleForUserInDomain(string user, string role, string domain);
-        bool DeleteRoleForUserInDomain(string user, string role, string domain);
+        vector<string> GetUsersForRoleInDomain(string name, string domain = {});
+        vector<string> GetRolesForUserInDomain(string name, string domain = {});
+        vector<vector<string>> GetPermissionsForUserInDomain(string user, string domain = {});
+        bool AddRoleForUserInDomain(string user, string role, string domain = {});
+        bool DeleteRoleForUserInDomain(string user, string role, string domain = {});
 
 };
 

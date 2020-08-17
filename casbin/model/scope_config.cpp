@@ -1,11 +1,27 @@
+/*
+* Copyright 2020 The casbin Authors. All Rights Reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*    http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
 #pragma once
 
 #include "pch.h"
 
 #include "./scope_config.h"
 
-void* InitializeScope() {
-    return (void*)new int;
+Scope InitializeScope() {
+    return duk_create_heap_default();
 }
 
 void PushFunctionValue(Scope scope, Function f, int nargs){
@@ -48,7 +64,7 @@ void PushObjectValue(Scope scope){
     duk_push_global_object(scope);
 }
 
-void PushFunction(Scope scope, Function f, int nargs, string fname) {
+void PushFunction(Scope scope, Function f, string fname, int nargs) {
     duk_push_c_function(scope, f, (Index)nargs);
     duk_put_global_string(scope, fname.c_str());
 }
@@ -94,13 +110,13 @@ void PushPointer(Scope scope, void * ptr, string identifier){
 }
 
 void PushObject(Scope scope, string identifier){
-    duk_push_global_object(scope);
+    duk_push_object(scope);
     duk_put_global_string(scope, identifier.c_str());
     duk_push_int(scope, 0);
     duk_put_global_string(scope, (identifier+"len").c_str());
 }
 
-void PushFunctionPropToObject(Scope scope, string obj, Function f, int nargs, string fname) {
+void PushFunctionPropToObject(Scope scope, string obj, Function f, string fname, int nargs) {
     duk_get_global_string(scope, obj.c_str());
     duk_push_c_function(scope, f, nargs);
     duk_put_prop_string(scope, -2, fname.c_str());
@@ -207,4 +223,17 @@ string GetString(Scope scope, int id){
 
 void* GetPointer(Scope scope, int id){
     return (void *)duk_to_pointer(scope, (Index)id);
+}
+
+void Get(Scope scope, string identifier){
+    Eval(scope, identifier);
+}
+
+bool Eval(Scope scope, string expression){
+    PushStringValue(scope, expression);
+    return duk_peval(scope)==0;
+}
+
+void EvalNoResult(Scope scope, string expression){
+    duk_eval_string_noresult(scope, expression.c_str());
 }

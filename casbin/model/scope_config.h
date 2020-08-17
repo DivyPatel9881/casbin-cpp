@@ -1,3 +1,19 @@
+/*
+* Copyright 2020 The casbin Authors. All Rights Reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*    http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
 #ifndef CASBIN_CPP_MODEL_SCOPE_CONFIG
 #define CASBIN_CPP_MODEL_SCOPE_CONFIG
 
@@ -23,7 +39,7 @@ typedef duk_ret_t ReturnType;
 typedef duk_c_function Function;
 typedef duk_idx_t Index;
 
-void* InitializeScope();
+Scope InitializeScope();
 void PushFunctionValue(Scope scope, Function f, int nargs);
 void PushBooleanValue(Scope scope, bool expression);
 void PushTrueValue(Scope scope);
@@ -34,7 +50,7 @@ void PushDoubleValue(Scope scope, double d);
 void PushStringValue(Scope scope, string s);
 void PushPointerValue(Scope scope, void * ptr);
 void PushObjectValue(Scope scope);
-void PushFunction(Scope scope, Function f, int nargs, string fname);
+void PushFunction(Scope scope, Function f, string fname, int nargs);
 void PushBoolean(Scope scope, bool expression, string identifier);
 void PushTrue(Scope scope, string identifier);
 void PushFalse(Scope scope, string identifier);
@@ -44,7 +60,7 @@ void PushDouble(Scope scope, double d, string identifier);
 void PushString(Scope scope, string s, string identifier);
 void PushPointer(Scope scope, void * ptr, string identifier);
 void PushObject(Scope scope, string identifier = "r");
-void PushFunctionPropToObject(Scope scope, string obj, Function f, int nargs, string fname);
+void PushFunctionPropToObject(Scope scope, string obj, Function f, string fname, int nargs);
 void PushBooleanPropToObject(Scope scope, string obj, bool expression, string identifier);
 void PushTruePropToObject(Scope scope, string obj, string identifier);
 void PushFalsePropToObject(Scope scope, string obj, string identifier);
@@ -63,5 +79,8 @@ float GetFloat(Scope scope, int id = -1);
 double GetDouble(Scope scope, int id = -1);
 string GetString(Scope scope, int id = -1);
 void* GetPointer(Scope scope, int id = -1);
+void Get(Scope scope, string identifier);
+bool Eval(Scope scope, string expression);
+void EvalNoResult(Scope scope, string expression);
 
 #endif
